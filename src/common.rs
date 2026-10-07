@@ -2363,11 +2363,12 @@ pub fn load_custom_client() {
             s.insert("key".to_owned(), v.to_owned());
         }
     }
-    // RIGGTEK QuickSupport: nur eingehende Verbindungen zulassen
-    hbb_common::config::HARD_SETTINGS
-        .write()
-        .unwrap()
-        .insert("conn-type".to_owned(), "incoming".to_owned());
+    // RIGGTEK QuickSupport: nur eingehende Verbindungen, keine Installation
+    {
+        let mut h = hbb_common::config::HARD_SETTINGS.write().unwrap();
+        h.insert("conn-type".to_owned(), "incoming".to_owned());
+        h.insert("disable-installation".to_owned(), "Y".to_owned());
+    }
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());
