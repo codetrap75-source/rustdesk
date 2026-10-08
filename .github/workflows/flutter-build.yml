@@ -1655,6 +1655,8 @@ jobs:
           dockerRunArgs: |
             --volume "${PWD}:/workspace"
             --volume "/opt/artifacts:/opt/artifacts"
+            --env RENDEZVOUS_SERVER
+            --env RS_PUB_KEY
           shell: /bin/bash
           install: |
             apt-get update -y
@@ -1976,6 +1978,8 @@ jobs:
           dockerRunArgs: |
             --volume "${PWD}:/workspace"
             --volume "/opt/artifacts:/opt/artifacts"
+            --env RENDEZVOUS_SERVER
+            --env RS_PUB_KEY
           shell: /bin/bash
           install: |
             apt-get update -y
@@ -2256,6 +2260,8 @@ jobs:
             ls -l "${PWD}"
           dockerRunArgs: |
             --volume "${PWD}:/workspace"
+            --env RENDEZVOUS_SERVER
+            --env RS_PUB_KEY
           shell: /bin/bash
           install: |
             apt-get update
@@ -2528,6 +2534,8 @@ jobs:
             ls -l "${PWD}"
           dockerRunArgs: |
             --volume "${PWD}:/workspace"
+            --env RENDEZVOUS_SERVER
+            --env RS_PUB_KEY
           shell: /bin/bash
           install: |
             apt-get update -y
