@@ -2,6 +2,43 @@ name: Flutter Nightly Build
 
 on:
   workflow_dispatch:
+    inputs:
+      build-windows:
+        description: "Windows (x64 + ARM64, EXE/MSI)"
+        type: boolean
+        default: true
+      build-windows-sciter:
+        description: "Windows 32-Bit (Sciter, alte Oberfläche)"
+        type: boolean
+        default: false
+      build-macos:
+        description: "macOS (DMG)"
+        type: boolean
+        default: true
+      build-ios:
+        description: "iOS"
+        type: boolean
+        default: false
+      build-android:
+        description: "Android (APK)"
+        type: boolean
+        default: false
+      build-linux:
+        description: "Linux DEB/RPM"
+        type: boolean
+        default: false
+      build-linux-sciter:
+        description: "Linux Sciter-DEB"
+        type: boolean
+        default: false
+      build-appimage:
+        description: "Linux AppImage"
+        type: boolean
+        default: false
+      build-flatpak:
+        description: "Linux Flatpak"
+        type: boolean
+        default: false
 
 jobs:
   run-flutter-nightly-build:
@@ -10,3 +47,12 @@ jobs:
     with:
       upload-artifact: true
       upload-tag: "nightly"
+      build-windows: ${{ inputs.build-windows }}
+      build-windows-sciter: ${{ inputs.build-windows-sciter }}
+      build-macos: ${{ inputs.build-macos }}
+      build-ios: ${{ inputs.build-ios }}
+      build-android: ${{ inputs.build-android }}
+      build-linux: ${{ inputs.build-linux }}
+      build-linux-sciter: ${{ inputs.build-linux-sciter }}
+      build-appimage: ${{ inputs.build-appimage }}
+      build-flatpak: ${{ inputs.build-flatpak }}

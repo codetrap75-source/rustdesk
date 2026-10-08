@@ -9,6 +9,33 @@ on:
       upload-tag:
         type: string
         default: "nightly"
+      build-windows:
+        type: boolean
+        default: true
+      build-windows-sciter:
+        type: boolean
+        default: true
+      build-macos:
+        type: boolean
+        default: true
+      build-ios:
+        type: boolean
+        default: true
+      build-android:
+        type: boolean
+        default: true
+      build-linux:
+        type: boolean
+        default: true
+      build-linux-sciter:
+        type: boolean
+        default: true
+      build-appimage:
+        type: boolean
+        default: true
+      build-flatpak:
+        type: boolean
+        default: true
 
 # NOTE: F-Droid builder script 'flutter/build_fdroid.sh' reads environment
 # variables from this workflow!
@@ -85,9 +112,11 @@ jobs:
             rustdesk.sbom.json
 
   generate-bridge:
+    if: ${{ inputs.build-windows || inputs.build-macos || inputs.build-ios || inputs.build-android || inputs.build-linux || inputs.build-appimage || inputs.build-flatpak }}
     uses: ./.github/workflows/bridge.yml
 
   build-RustDeskTempTopMostWindow:
+    if: ${{ inputs.build-windows }}
     uses: ./.github/workflows/third-party-RustDeskTempTopMostWindow.yml
     strategy:
       fail-fast: false
@@ -109,6 +138,7 @@ jobs:
       target_version: Windows10
 
   build-for-windows-flutter:
+    if: ${{ inputs.build-windows }}
     name: ${{ matrix.job.target }}
     needs: [build-RustDeskTempTopMostWindow, generate-bridge]
     runs-on: ${{ matrix.job.os }}
@@ -464,6 +494,7 @@ jobs:
 
   # The fallback for the flutter version, we use Sciter for 32bit Windows.
   build-for-windows-sciter:
+    if: ${{ inputs.build-windows-sciter }}
     name: ${{ matrix.job.target }} (${{ matrix.job.os }})
     runs-on: ${{ matrix.job.os }}
     # Temporarily disable this action due to additional test is needed.
@@ -624,7 +655,7 @@ jobs:
             ./SignOutput/rustdesk-*.exe
 
   build-rustdesk-ios:
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ inputs.upload-artifact && inputs.build-ios }}
     name: build rustdesk ios ipa
     runs-on: ${{ matrix.job.os }}
     needs: [generate-bridge]
@@ -746,6 +777,7 @@ jobs:
 
 
   build-for-macOS:
+    if: ${{ inputs.build-macos }}
     name: ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
     needs: [generate-bridge]
@@ -1036,6 +1068,7 @@ jobs:
           files: rustdesk-${{ env.VERSION }}-unsigned.tar.gz
 
   build-rustdesk-android:
+    if: ${{ inputs.build-android }}
     needs: [generate-bridge]
     name: build rustdesk android apk ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.os }}
@@ -1331,7 +1364,7 @@ jobs:
   build-rustdesk-android-universal:
     needs: [build-rustdesk-android]
     name: build rustdesk android universal apk
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ inputs.upload-artifact && inputs.build-android }}
     runs-on: ubuntu-24.04
     env:
       reltype: release
@@ -1514,6 +1547,7 @@ jobs:
             signed-apk/rustdesk-${{ env.VERSION }}-universal${{ env.suffix }}.apk
 
   build-rustdesk-linux:
+    if: ${{ inputs.build-linux || inputs.build-appimage || inputs.build-flatpak }}
     needs: [generate-bridge]
     name: build rustdesk linux ${{ matrix.job.target }}
     runs-on: ${{ matrix.job.on }}
@@ -1718,6 +1752,11 @@ jobs:
             # start build
             pushd /workspace
             export VCPKG_ROOT=/opt/artifacts/vcpkg
+            export RENDEZVOUS_SERVER="${{ secrets.RENDEZVOUS_SERVER }}"
+            export RS_PUB_KEY="${{ secrets.RS_PUB_KEY }}"
+            if [ -z "$RENDEZVOUS_SERVER" ] || [ -z "$RS_PUB_KEY" ]; then
+              echo "::error::RIGGTEK Server/Key fehlen im Linux-Build"; exit 1
+            fi
             if [[ "${{ matrix.job.arch }}" == "aarch64" ]]; then
               export JOBS="--jobs 3"
             else
@@ -1865,6 +1904,7 @@ jobs:
   # old for it. A separate job rather than a matrix entry of build-rustdesk-linux: appimage and
   # flatpak need that job, and a failure here must not skip them.
   build-rustdesk-linux-drm:
+    if: ${{ inputs.build-linux }}
     needs: [generate-bridge]
     name: build rustdesk linux drm x86_64
     runs-on: ubuntu-22.04
@@ -2041,6 +2081,11 @@ jobs:
             # start build
             pushd /workspace
             export VCPKG_ROOT=/opt/artifacts/vcpkg
+            export RENDEZVOUS_SERVER="${{ secrets.RENDEZVOUS_SERVER }}"
+            export RS_PUB_KEY="${{ secrets.RS_PUB_KEY }}"
+            if [ -z "$RENDEZVOUS_SERVER" ] || [ -z "$RS_PUB_KEY" ]; then
+              echo "::error::RIGGTEK Server/Key fehlen im Linux-Build"; exit 1
+            fi
             # use the .so built on the runner; build.py checks it is the pinned checkout
             export DRMTAP_PREBUILT_DIR=/workspace/third_party/libdrmtap/build-pkg
             # ask build.py for the features so this line and the packaging line cannot drift
@@ -2177,7 +2222,7 @@ jobs:
           path: ${{ env.DRM_DEB }}
 
   build-rustdesk-linux-sciter:
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ inputs.upload-artifact && (inputs.build-linux-sciter || inputs.build-flatpak) }}
     runs-on: ${{ matrix.job.on }}
     name: build-rustdesk-linux-sciter ${{ matrix.job.target }}
     strategy:
@@ -2362,6 +2407,11 @@ jobs:
             cat ~/.cargo/config
             # install dependencies from vcpkg
             export VCPKG_ROOT=/opt/artifacts/vcpkg
+            export RENDEZVOUS_SERVER="${{ secrets.RENDEZVOUS_SERVER }}"
+            export RS_PUB_KEY="${{ secrets.RS_PUB_KEY }}"
+            if [ -z "$RENDEZVOUS_SERVER" ] || [ -z "$RS_PUB_KEY" ]; then
+              echo "::error::RIGGTEK Server/Key fehlen im Linux-Build"; exit 1
+            fi
             # remove this when support higher version
             export USE_AOM_391=1
             if ! $VCPKG_ROOT/vcpkg install --triplet ${{ matrix.job.vcpkg-triplet }} --x-install-root="$VCPKG_ROOT/installed"; then
@@ -2424,7 +2474,7 @@ jobs:
     name: Build appimage ${{ matrix.job.target }}
     needs: [build-rustdesk-linux]
     runs-on: ubuntu-22.04
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ inputs.upload-artifact && inputs.build-appimage }}
     strategy:
       fail-fast: false
       matrix:
@@ -2479,7 +2529,7 @@ jobs:
       - build-rustdesk-linux
       - build-rustdesk-linux-sciter
     runs-on: ${{ matrix.job.on }}
-    if: ${{ inputs.upload-artifact }}
+    if: ${{ inputs.upload-artifact && inputs.build-flatpak }}
     strategy:
       fail-fast: false
       matrix:
